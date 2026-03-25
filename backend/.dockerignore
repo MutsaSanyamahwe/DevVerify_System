@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+venv/
+env/
+.Python
+
+# Git
+.git/
+.gitignore
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Other
+*.log
+*.sqlite3
+*.db
+*.bak

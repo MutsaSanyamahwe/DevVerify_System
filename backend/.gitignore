@@ -1,0 +1,34 @@
+# Environment variables
+.env
+
+# Python virtual environment
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Docker
+*.dockerignore.bak
+docker-compose.override.yml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Others
+*.sqlite3
+*.db
+.DS_Store
