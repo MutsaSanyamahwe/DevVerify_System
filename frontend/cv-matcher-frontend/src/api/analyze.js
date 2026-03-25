@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "https://devverify-system.onrender.com";
 
 export async function analyzeProfile(file, githubUsername) {
   const formData = new FormData();
