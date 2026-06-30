@@ -6,7 +6,7 @@ DevVerify is an automated developer portfolio generator. Give it a CV and a GitH
 
 It works two ways:
 
-1. **As a standalone website** — upload a CV, enter a GitHub username, and DevVerify generates a shareable developer portfolio (qualifications, categorized skill tags, GitHub-derived project data) through its own landing → upload → results flow.
+1. **As a standalone website** — upload a CV, enter a GitHub username, and DevVerify generates a developer portfolio (qualifications, categorized skill tags, GitHub-derived project data) through its own landing → upload → results flow.
 2. **As an onboarding engine for other platforms** — the same backend exposes a single `/analyze` endpoint that any platform can call to pre-fill a user profile. [DevMatch](https://github.com/MutsaSanyamahwe/DevMatch) uses it exactly this way during signup.
 
 The frontend and the integration use case hit the same FastAPI backend — there's no separate logic for "standalone" vs "embedded" use.
