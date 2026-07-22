@@ -1,4 +1,4 @@
-const API_URL = "devverifysystem-production.up.railway.app";
+const API_URL = "https://devverifysystem-production.up.railway.app";
 
 export async function analyzeProfile(file, githubUsername) {
   const formData = new FormData();
