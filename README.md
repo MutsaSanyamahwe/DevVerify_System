@@ -1,59 +1,44 @@
 # DevVerify
 
-**Live Demo** [DevVerify](https://devverify-system-1.onrender.com/)
+**Live Demo:** [DevVerify](https://devverify-system-1.onrender.com/)
 
-DevVerify is an automated developer portfolio generator. Give it a CV and a GitHub username, and it builds a structured profile — degrees, certifications, categorized skills, and project signal — pulled directly from those two sources instead of typed in by hand.
+## The Problem
 
-It works two ways:
+Every developer platform runs into the same wall on day one: the profile form.
 
-1. **As a standalone website** — upload a CV, enter a GitHub username, and DevVerify generates a developer portfolio (qualifications, categorized skill tags, GitHub-derived project data) through its own landing → upload → results flow.
-2. **As an onboarding engine for other platforms** — the same backend exposes a single `/analyze` endpoint that any platform can call to pre-fill a user profile. [DevMatch](https://github.com/MutsaSanyamahwe/DevMatch) uses it exactly this way during signup.
+A new user shows up, and before they can do anything useful — get matched, get hired, get discovered — they have to sit down and *describe themselves*. What they studied. What they're certified in. What they can actually build. And because this is typed by hand, it's slow, it's inconsistent, and it's rarely accurate. People forget things. People round up. People copy-paste the same three buzzwords everyone else uses because they don't know how else to describe what they do.
 
-The frontend and the integration use case hit the same FastAPI backend — there's no separate logic for "standalone" vs "embedded" use.
+The result is a platform full of profiles that are hard to trust, because nothing behind them is verifiable — and hard to use, because the onboarding step that produces them is friction the user has to push through before they see any value.
 
----
+DevVerify exists to remove that step entirely. Instead of asking someone to describe their skills, it looks at the evidence they already have — a CV and a GitHub account — and builds the profile from that.
 
-## Problem Statement
+## The Idea
 
-Manual profile creation on developer platforms tends to produce:
+A person's CV already says what they studied and what they're certified in. Their GitHub already shows what they've actually built, in what languages, and how. Between those two sources, most of a developer profile already exists — it just hasn't been assembled yet.
 
-- Incomplete or inaccurate skill representation
-- Inflated or unverifiable credentials
-- High onboarding friction — users have to type out everything themselves
-- Profiles that are hard to trust because nothing backs them up
+DevVerify is the thing that assembles it. Feed it a CV and a GitHub username, and it hands back a structured profile: degrees, certifications, categorized skills, and real project signal, all pulled from source rather than self-reported.
 
-DevVerify exists to replace that manual step with evidence pulled directly from a CV and a GitHub account.
+## How It Works
 
----
+The flow is the same no matter who's asking:
 
-## What DevVerify Does
+1. **Something sends DevVerify a CV and a GitHub username.** That "something" might be a person on DevVerify's own site, or it might be another platform calling DevVerify's API during its own signup flow.
+2. **The CV gets read.** DevVerify parses the PDF or DOCX and pattern-matches the text against known degree and certification formats to pull out qualifications.
+3. **GitHub gets read.** DevVerify pulls the user's most recently updated repositories — their languages, topics, and README content — straight from the GitHub API.
+4. **Skills get extracted, not guessed.** Languages and topics are normalized against a canonical skill map, and a TF-IDF pass over the README text catches additional skills mentioned in project descriptions but not captured in metadata alone.
+5. **One structured profile comes back.** Education from the CV, skills and project data from GitHub, combined into a single response — ready to render as a portfolio, or to pre-fill someone else's signup form.
 
-Given a CV file and a GitHub username, DevVerify:
+That's it. There's no separate "logic path" depending on who's asking — the same backend, the same extraction pipeline, produces the result either way.
 
-- **Parses the CV** (PDF or DOCX) and extracts degrees and certifications using pattern matching against known degree/certification formats
-- **Fetches GitHub data** — a user's repositories, each repo's languages, topics, and README content (via the GitHub REST API)
-- **Extracts skills** from that GitHub data by normalizing languages/topics against a canonical skill-alias map, then supplements that with TF-IDF keyword extraction over repo READMEs to catch additional skills mentioned in project descriptions
-- **Returns one structured JSON response** combining CV-derived education data with GitHub-derived skills and repo details
+## Two Ways to Use It
 
-This is the layer [DevMatch](https://devmatch-1-hj4i.onrender.com/) calls during onboarding so a new user's profile is mostly pre-filled before they see a form — and the same flow is also what powers DevVerify's own portfolio site.
+**As a product.** DevVerify has its own site: land on it, upload a CV, enter a GitHub username, and watch a portfolio get built — qualifications, skill tags grouped by category, and project data, presented with a bit of polish (animated stat counters, a clean results view). No other platform required.
 
----
+**As infrastructure.** Under the product is a single API endpoint, `/analyze`, that any platform can call. [DevMatch](https://github.com/MutsaSanyamahwe/DevMatch) uses exactly this during its own onboarding — a new user connects their CV and GitHub, and by the time they see DevMatch's profile form, most of it is already filled in. DevVerify never knows or cares that it's DevMatch asking instead of its own frontend; the backend has no platform-specific branching at all.
 
-## Frontend: Portfolio Generation
+That second use case is really the point. DevVerify isn't just a tool for making one nice-looking portfolio page — it's the verification layer other developer platforms can build onboarding on top of, so *they* don't have to solve "how do we get an accurate profile out of a new user" themselves.
 
-The frontend (`frontend/cv-matcher-frontend`) is a standalone React app with its own three-step flow:
-
-- **Landing page** — entry point explaining the product
-- **Upload page** — drag-and-drop CV upload (`react-dropzone`) plus a GitHub username field
-- **Results page** — the generated portfolio: qualification count, degrees and certifications, skills grouped into categories with tags, and animated stat counters (`react-countup`) summarizing the extracted data
-
-It calls the same `/analyze` endpoint described below, so the standalone site and any third-party integration (like DevMatch) are backed by identical extraction logic.
-
----
-
-## API
-
-DevVerify exposes a single endpoint.
+## The API
 
 ### `POST /analyze`
 
@@ -86,72 +71,57 @@ DevVerify exposes a single endpoint.
 }
 ```
 
-Only a user's 10 most recently updated repositories are analyzed per request, to keep GitHub API call volume and response time reasonable.
+Only the 10 most recently updated repositories are analyzed per request, to keep API call volume and response time reasonable.
 
----
+## Where It Sits in the Ecosystem
 
-## How It Fits Into the Ecosystem
-
-DevVerify works on its own and as infrastructure for other platforms:
-
-- **As a product** — its own frontend lets anyone generate a developer portfolio directly, no other platform required.
-- **As infrastructure for [DevMatch](https://github.com/MutsaSanyamahwe/DevMatch)** — DevMatch calls DevVerify's `/analyze` endpoint during onboarding and uses the response to pre-fill a new user's profile, skipping DevVerify's own frontend entirely.
-- **RepoRecommender** — a separate service that clusters repositories with K-Means to recommend similar projects. Linked from DevMatch's Explore page; not called by DevVerify.
-
-The backend has no platform-specific logic baked in — it doesn't know or care whether the caller is its own frontend or another system's onboarding flow.
-
----
+- **DevVerify** — generates the verified profile, either through its own frontend or on behalf of another platform's onboarding.
+- **[DevMatch](https://devmatch-1-hj4i.onrender.com/)** — calls DevVerify's `/analyze` endpoint at signup to pre-fill new user profiles, then skips DevVerify's frontend entirely.
+- **RepoRecommender** — a separate service, linked from DevMatch's Explore page, that clusters repositories with K-Means to surface similar projects. It doesn't call DevVerify and isn't called by it — a neighbor in the ecosystem, not a dependency.
 
 ## Tech Stack
 
 **Frontend**
-- React 19 + Vite
-- React Router (landing / upload / results flow)
-- Tailwind CSS
-- Framer Motion (animation)
-- react-dropzone (CV upload)
-- react-chartjs-2 + Chart.js (skill/data visualization)
-- react-countup (animated result stats)
+- React 19 + Vite, React Router (landing / upload / results)
+- Tailwind CSS, Framer Motion
+- react-dropzone (CV upload), react-chartjs-2 + Chart.js (visualization), react-countup (result stats)
 
 **Backend**
 - FastAPI (Python)
-- `pdfplumber` (PDF parsing), `python-docx` (DOCX parsing)
-- GitHub REST API via `httpx` (async)
-- scikit-learn `TfidfVectorizer` + canonical skill-alias map for skill normalization
-- Regex pattern matching for degree/certification extraction
-- Docker (Python 3.12-slim base)
-
----
+- `pdfplumber` + `python-docx` for CV parsing
+- GitHub REST API via async `httpx`
+- scikit-learn `TfidfVectorizer` + a canonical skill-alias map for normalization
+- Regex-based degree/certification extraction
+- Docker (Python 3.12-slim)
 
 ## Getting Started
 
 ### Prerequisites
-
 - Python 3.12+
-- A GitHub personal access token (for higher API rate limits when fetching repo data)
+- A GitHub personal access token (for higher API rate limits)
 
-### Setup
+### Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in `backend/`:
+Create `backend/.env`:
 
 ```env
 GITHUB_TOKEN=your_github_personal_access_token
 ```
 
-Run the server:
+Run it:
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`, with the analyze endpoint at `http://localhost:8000/analyze`.
+API available at `http://localhost:8000`, with `/analyze` as the working endpoint.
 
-### Docker (Backend)
+### Backend via Docker
 
 ```bash
 cd backend
@@ -159,7 +129,7 @@ docker build -t devverify .
 docker run -p 8000:8000 --env-file .env devverify
 ```
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend/cv-matcher-frontend
@@ -167,9 +137,7 @@ npm install
 npm run dev
 ```
 
-By default the frontend calls the deployed backend (`https://devverify-system.onrender.com`) — update `src/api/analyze.js` to point at `http://localhost:8000` if you want to run fully locally against your own backend.
-
----
+By default the frontend points at the deployed backend (`https://devverify-system.onrender.com`). Update `src/api/analyze.js` to point at `http://localhost:8000` to run fully local.
 
 ## Project Structure
 
@@ -204,15 +172,11 @@ DevVerify_System/
         └── package.json
 ```
 
----
-
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
 | `GITHUB_TOKEN` | GitHub personal access token used to authenticate requests to the GitHub API and raise rate limits |
-
----
 
 ## Author
 
